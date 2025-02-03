@@ -1,10 +1,14 @@
 import { useToast } from '@apideck/components'
-import { ChatCompletionRequestMessage } from 'openai'
 import { ReactNode, createContext, useContext, useEffect, useState } from 'react'
 
+interface Message {
+  role: 'user' | 'system' | 'assistant'
+  content: string
+}
+
 interface ContextProps {
-  messages: ChatCompletionRequestMessage[]
-  addMessage: (content: string) => Promise<void>
+  messages: Message[]
+  addMessage: (message: Message) => Promise<void>
   isLoadingAnswer: boolean
 }
 
@@ -12,44 +16,28 @@ const ChatsContext = createContext<Partial<ContextProps>>({})
 
 export function MessagesProvider({ children }: { children: ReactNode }) {
   const { addToast } = useToast()
-  const [messages, setMessages] = useState<ChatCompletionRequestMessage[]>([])
+  const [messages, setMessages] = useState<Message[]>([])
   const [isLoadingAnswer, setIsLoadingAnswer] = useState(false)
 
   useEffect(() => {
-    const initializeChat = () => {
-      const systemMessage: ChatCompletionRequestMessage = {
+    // Initialize the chat with a welcome message if there are no messages
+    if (messages.length === 0) {
+      const welcomeMessage: Message = {
         role: 'system',
-        content: 'You are ChatGPT, a large language model trained by OpenAI.'
+        content: 'Welcome! How can I assist you today?'
       }
-      const welcomeMessage: ChatCompletionRequestMessage = {
-        role: 'assistant',
-        content: 'Hi, How can I help you today?'
-      }
-      setMessages([systemMessage, welcomeMessage])
+      setMessages([welcomeMessage])
     }
+  }, [messages.length])
 
-    // When no messages are present, we initialize the chat the system message and the welcome message
-    // We hide the system message from the user in the UI
-    if (!messages?.length) {
-      initializeChat()
-    }
-  }, [messages?.length, setMessages])
-
-  const addMessage = async (content: string) => {
+  const addMessage = async (message: Message) => {
     setIsLoadingAnswer(true)
     try {
-      const newMessage: ChatCompletionRequestMessage = {
-        role: 'user',
-        content
-      }
-      const newMessages = [...messages, newMessage]
-
-      // Add the user message to the state so we can see it immediately
-      setMessages(newMessages)
-
+      // Add the new message to the messages array
+      setMessages((prevMessages) => [...prevMessages, message])
     } catch (error) {
-      // Show error when something goes wrong
-      addToast({ title: 'An error occurred', type: 'error' })
+      // Show a toast notification in case of an error
+      addToast({ title: 'An error occurred while sending the message', type: 'error' })
     } finally {
       setIsLoadingAnswer(false)
     }
