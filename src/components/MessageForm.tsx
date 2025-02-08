@@ -2,80 +2,164 @@
 import { Button, TextArea } from '@apideck/components'
 import { useState } from 'react'
 import { useMessages } from 'utils/useMessages'
-import { useFilms } from './FilmContent'
+import { useFilms, Film } from './FilmContent'
+import { useBooks, Book } from './BookContent'
+import { IoArrowUpCircleOutline } from 'react-icons/io5'
 
 const MessageForm = () => {
   const [content, setContent] = useState('')
   const { addMessage } = useMessages()
-  const { setFilms } = useFilms() // Film verisini güncellemek için kullanın
+  const { addFilms } = useFilms() // Film verisini güncellemek için kullanın
+  const { addBooks } = useBooks() // Kitap verisini güncellemek için kullanın
+  const [submitted, setSubmitted] = useState(false)
+  const [waiting, setWaiting] = useState(false)
+  const [option, setOption] = useState<'movies' | 'books'>('movies') // Seçim butonu için state
 
   const handleSubmit = async (e?: React.FormEvent<unknown>) => {
-    e?.preventDefault();
-    addMessage({ role: 'user', content });
-  
+    e?.preventDefault()
+    setSubmitted(true)
+    setWaiting(true)
+    setContent('')
+    addMessage({ role: 'user', content, timestamp: new Date() })
+
     try {
-      const response = await fetch('http://localhost:8000/api/search', {
+      const response = await fetch('http://localhost:8000/api/search/' + option, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text: content })
-      });
-  
+      })
+
       if (!response.ok) {
         console.error('API isteğinde hata:', response.statusText)
-        return;
+        return
       }
-  
+
       const data = await response.json()
-      console.log('Film verisi geldi:', data)
-  
+
       // Eğer gelen veri data.movies şeklinde ise:
       if (data.movies && Array.isArray(data.movies)) {
-        setFilms(data.movies); // Context'e data.movies dizisini aktarıyoruz
+        // API'den gelen veriyi Film arayüzüne uygun hale getir
+        const formattedMovies: Film[] = data.movies.map((movie: any) => ({
+          id: movie.id, // API'den gelen id
+          film: movie.film, // API'den gelen film adı
+          ozet: movie.ozet, // API'den gelen özet
+          tür: movie.tür, // API'den gelen tür
+          oyuncular: movie.yuncular, // API'den gelen oyuncular
+          yönetmen: movie.yönetmen, // API'den gelen yönetmen
+          vizyon: movie.vizyon, // API'den gelen vizyon tarihi
+          sure: movie.sure, // API'den gelen süre
+          timestamp: Date.now() // Şu anki zamanı ekleyin
+        }))
+
+        // Context'i güncelle
+        addFilms(formattedMovies) // Diziyi doğrudan set et
+      } else if (data.books && Array.isArray(data.books)) {
+        const formattedBooks: Book[] = data.books.map((book: any) => ({
+          id: book.id, // API'den gelen id
+          name: book.name,
+          author: book.author,
+          publisher: book.publisher,
+          publication_year: book.publication_year, // publication_year bir sayı olmalı
+          ISBN: book.ISBN, // ISBN uzun olabileceği için String kullanıyoruz
+          book_type: book.book_type,
+          explanation: book.explanation,
+          book_img: book.book_img, // "url" yerine "String" olmalı
+          timestamp: Date.now() // Şu anki zamanı ekleyin
+        }))
+
+        // Context'i güncelle
+        addBooks(formattedBooks) // Diziyi doğrudan set et
       } else {
-        console.warn("Beklenmedik veri yapısı:", data);
-        setFilms([]);
+        console.warn('Beklenmedik veri yapısı:', data)
+        addFilms([])
+        addBooks([])
       }
     } catch (error) {
-      console.error('Error fetching data:', error);
+      console.error('Error fetching data:', error)
+    } finally {
+      setWaiting(false)
     }
-  
-    setContent('');
-  };
-  
+  }
+
+  const handleButton = (e: React.FormEvent) => {
+    e.preventDefault()
+    setSubmitted(true) // Form gönderildiğinde state güncellenir
+    setTimeout(() => {
+      setSubmitted(false) // 3 saniye sonra form eski yerine gelir
+    }, 3000)
+  }
 
   return (
-    <form className="relative mx-auto max-w-3xl rounded-t-xl" onSubmit={handleSubmit}>
-      <div className="border-gray-200 h-[130px] rounded-t-xl backdrop-blur border border-gray-500/10 dark:border-gray-50/[0.06] bg-white supports-backdrop-blur:bg-white/95 p-5">
+    <div className={`flex flex-col items-center h-screen ${submitted ? '' : 'justify-center'}`}>
+      <form
+        className={`w-full max-w-3xl rounded-2xl bg-[#303030] shadow-lg p-5 h-[200px] ${
+          waiting ? 'hidden' : ''
+        }`}
+        onSubmit={handleSubmit}
+      >
         <TextArea
           name="content"
-          placeholder="Enter your message here..."
+          placeholder={
+            option === 'movies'
+              ? 'Bir film önerisi almak ister misin?'
+              : 'Bir kitap önerisi almak ister misin?'
+          }
           rows={3}
           value={content}
           autoFocus
-          className="!p-3 text-gray-900 border-0 ring-1 dark:ring-0 ring-gray-300/40 focus:ring-gray-300/80 focus:outline-none dark:text-white dark:placeholder-gray-400 dark:bg-gray-800/80 backdrop-blur shadow-none"
+          className="bg-[#303030] p-2 text-white rounded-xl shadow-sm"
           onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setContent(e.target.value)}
         />
-        <div className="absolute right-8 bottom-10">
-          <Button type="submit" size="small">
-            Send
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth={1.5}
-              stroke="currentColor"
-              className="w-4 h-4 ml-1"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5"
+
+        {/* Seçim Butonları */}
+        <div className="flex justify-between">
+          <div className="mt-2 flex items-center relative">
+            <div className="relative flex items-center border border-[#DE981D] rounded-lg p-1">
+              {/* Arka Plan Animasyonu */}
+              <div
+                className={`absolute bg-[#DE981D] h-[90%] rounded-md transition-all duration-300 ${
+                  option === 'movies' ? 'left-1' : 'left-[calc(100%-4.1rem)]'
+                }`}
+                style={{ width: 'calc(50% - 0.5rem)' }}
+              ></div>
+
+              {/* Film Butonu */}
+              <button
+                type="button"
+                onClick={() => setOption('movies')}
+                className={`relative z-10 px-4 py-2 text-white rounded-md transition-colors duration-300 ${
+                  option === 'movies' ? 'text-black' : 'hover:text-black'
+                }`}
+              >
+                Film
+              </button>
+
+              {/* Kitap Butonu */}
+              <button
+                type="button"
+                onClick={() => setOption('books')}
+                className={`relative z-10 px-4 py-2 text-white rounded-md transition-colors duration-300 ${
+                  option === 'books' ? 'text-black' : 'hover:text-black'
+                }`}
+              >
+                Kitap
+              </button>
+            </div>
+          </div>
+
+          {/* Gönder Butonu */}
+          <div className="flex justify-end items-end">
+            <Button type="submit" onSubmit={handleButton} size="regular">
+              {/* content boşsa gri, doluysa normal renk */}
+              <IoArrowUpCircleOutline
+                size={48}
+                className={content ? 'text-white' : 'text-gray-500'} // Tailwind CSS örneği
               />
-            </svg>
-          </Button>
+            </Button>
+          </div>
         </div>
-      </div>
-    </form>
+      </form>
+    </div>
   )
 }
 

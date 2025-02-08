@@ -1,9 +1,10 @@
 import { useToast } from '@apideck/components'
-import { ReactNode, createContext, useContext, useEffect, useState } from 'react'
+import { ReactNode, createContext, useContext, useState } from 'react'
 
 interface Message {
   role: 'user' | 'system' | 'assistant'
   content: string
+  timestamp: Date
 }
 
 interface ContextProps {
@@ -19,24 +20,12 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
   const [messages, setMessages] = useState<Message[]>([])
   const [isLoadingAnswer, setIsLoadingAnswer] = useState(false)
 
-  useEffect(() => {
-    // Initialize the chat with a welcome message if there are no messages
-    if (messages.length === 0) {
-      const welcomeMessage: Message = {
-        role: 'system',
-        content: 'Welcome! How can I assist you today?'
-      }
-      setMessages([welcomeMessage])
-    }
-  }, [messages.length])
-
   const addMessage = async (message: Message) => {
     setIsLoadingAnswer(true)
     try {
-      // Add the new message to the messages array
+      // Mevcut mesajların üzerine yeni mesajı ekleyin
       setMessages((prevMessages) => [...prevMessages, message])
     } catch (error) {
-      // Show a toast notification in case of an error
       addToast({ title: 'An error occurred while sending the message', type: 'error' })
     } finally {
       setIsLoadingAnswer(false)

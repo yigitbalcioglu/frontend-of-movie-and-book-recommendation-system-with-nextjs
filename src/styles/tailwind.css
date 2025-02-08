@@ -2,7 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
+/* cmnd + /
+/* @layer base {
   @font-face {
     font-family: 'Basier Circle';
     src: url('/fonts/BasierCircle-Bold.eot');
@@ -54,4 +55,4 @@
     font-style: normal;
     font-display: swap;
   }
-}
+} */

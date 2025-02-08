@@ -1,11 +1,15 @@
-@keyframes bounce {
+/* @keyframes bounce {
   0% {
     transform: translateY(0px);
   }
   10% {
     transform: translateY(-10px);
     background: #818cf8;
-  }
+    -webkit-transform: translateY(-10px);
+    -moz-transform: translateY(-10px);
+    -ms-transform: translateY(-10px);
+    -o-transform: translateY(-10px);
+}
   20% {
     transform: translateY(0px);
   }
@@ -45,4 +49,4 @@
 
 .delay-300 {
   animation-delay: 0.3s;
-}
+} */

@@ -1,24 +1,23 @@
-// pages/index.tsx
 import MessageForm from 'components/MessageForm'
 import MessagesList from 'components/MessageList'
-import FilmList from 'components/FilmList'
 import { NextPage } from 'next'
 import { MessagesProvider } from 'utils/useMessages'
 import { FilmsProvider } from '../components/FilmContent'
+import { BooksProvider } from '../components/BookContent'
 import Layout from 'components/Layout'
 
 const IndexPage: NextPage = () => {
   return (
     <MessagesProvider>
       <FilmsProvider>
-        <Layout>
-          {/* İstediğiniz yerde FilmList’i render edebilirsiniz */}
-          <FilmList />
-          <MessagesList />
-          <div className="fixed bottom-0 right-0 left-0">
-            <MessageForm />
-          </div>
-        </Layout>
+        <BooksProvider>
+          <Layout>
+            <div className="bg-[#212121]">
+              <MessagesList />
+              <MessageForm />
+            </div>
+          </Layout>
+        </BooksProvider>
       </FilmsProvider>
     </MessagesProvider>
   )

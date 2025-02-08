@@ -1,5 +1,6 @@
 // utils/FilmsContext.tsx
 import React, { createContext, useContext, useState, ReactNode } from 'react'
+import { useToast } from '@apideck/components'
 
 export interface Film {
   id: number
@@ -10,25 +11,41 @@ export interface Film {
   yönetmen: string
   vizyon: string
   sure: string
+  timestamp: Date
 }
 
 interface FilmsContextProps {
   films: Film[]
-  setFilms: (films: Film[]) => void
+  addFilms: (films: Film[]) => void
+  isLoadingAnswer: boolean
 }
 
 const FilmsContext = createContext<FilmsContextProps | undefined>(undefined)
 
 export const FilmsProvider = ({ children }: { children: ReactNode }) => {
   const [films, setFilms] = useState<Film[]>([])
+  const { addToast } = useToast()
+  const [isLoadingAnswer, setIsLoadingAnswer] = useState(false)
 
-  return <FilmsContext.Provider value={{ films, setFilms }}>{children}</FilmsContext.Provider>
+  const addFilms = async (films: Film[]) => {
+    setIsLoadingAnswer(true)
+    try {
+      // Mevcut mesajların üzerine yeni mesajı ekleyin
+      setFilms((prevFilms) => [...prevFilms, ...films])
+    } catch (error) {
+      addToast({ title: 'An error occurred while sending the message', type: 'error' })
+    } finally {
+      setIsLoadingAnswer(false)
+    }
+  }
+
+  return (
+    <FilmsContext.Provider value={{ films, addFilms, isLoadingAnswer }}>
+      {children}
+    </FilmsContext.Provider>
+  )
 }
 
 export const useFilms = () => {
-  const context = useContext(FilmsContext)
-  if (!context) {
-    throw new Error('useFilms must be used within a FilmsProvider')
-  }
-  return context
+  return useContext(FilmsContext) as FilmsContextProps
 }
